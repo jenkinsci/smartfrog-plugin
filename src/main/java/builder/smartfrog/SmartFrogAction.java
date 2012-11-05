@@ -21,6 +21,8 @@
  */
 package builder.smartfrog;
 
+import builder.smartfrog.command_line.CommandLineBuilder;
+import builder.smartfrog.command_line.CommandLineBuilderFactory;
 import hudson.Launcher;
 import hudson.Proc;
 import hudson.model.Action;
@@ -56,7 +58,7 @@ public class SmartFrogAction implements Action, Runnable {
 
     private static final String NL = System.getProperty("line.separator");
 
-    private final String host;
+    private final SmartFrogHost host;
     private State state;
     private AbstractBuild<?, ?> build;
 
@@ -69,19 +71,23 @@ public class SmartFrogAction implements Action, Runnable {
     private transient BuildListener log;
     private final transient int logNum;
 
-    public SmartFrogAction(SmartFrogBuilder builder, String host, int logNum) {
+    public SmartFrogAction(SmartFrogBuilder builder, SmartFrogHost host, int logNum) {
         this.builder = builder;
         this.host = host;
         this.state = State.STARTING;
         this.logNum = logNum;
     }
 
-    public String getHost() {
+    public SmartFrogHost getHost() {
         return host;
     }
     
     public int getLogNum(){
         return logNum;
+    }
+
+    public SmartFrogBuilder getBuilder(){
+        return builder;
     }
 
     public void perform(final AbstractBuild<?, ?> build, final Launcher launcher, final ConsoleLogger console) throws IOException,
@@ -90,7 +96,9 @@ public class SmartFrogAction implements Action, Runnable {
         this.launcher = launcher;
         this.console = console;
 
-        String[] cl = builder.buildDaemonCommandLine(host, Functions.convertWsToCanonicalPath(build.getWorkspace()));
+        CommandLineBuilder commandLineBuilder = CommandLineBuilderFactory.getInstance(this.getHost());
+
+        String[] cl = commandLineBuilder.buildDaemonCommandLine();
         logUpstream("[SmartFrog] INFO: Starting daemon on host " + host);
         logUpstream("[SmartFrog] INFO: Start command is " + Functions.cmdArrayToString(cl));
         log = new StreamBuildListener(new PrintStream(new SFFilterOutputStream(new FileOutputStream(getLogFile()))),
@@ -125,7 +133,10 @@ public class SmartFrogAction implements Action, Runnable {
     }
 
     public void interrupt() {
-        String[] cl = builder.buildStopDaemonCommandLine(host);
+        CommandLineBuilder commandLineBuilder = CommandLineBuilderFactory.getInstance(this.getHost());
+
+        String[] cl = commandLineBuilder.buildStopDaemonCommandLine();
+
         logUpstream("[SmartFrog] INFO: Trying to interrupt daemon on host " + host);
         logUpstream("[SmartFrog] INFO: Interrupt command is " + Functions.cmdArrayToString(cl));
         try {
