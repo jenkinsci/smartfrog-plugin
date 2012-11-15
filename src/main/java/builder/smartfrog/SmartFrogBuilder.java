@@ -141,6 +141,14 @@ public class SmartFrogBuilder extends Builder implements SmartFrogActionListener
             if(scriptSource.equals("content"))
                 sfScriptSource = new StringScriptSource(scriptName,scriptContent);
         }
+        if (sfHosts == null){
+            this.sfHosts = new HashMap<String, SmartFrogHost>();
+
+            List<SmartFrogHost> parsedHosts = Functions.parseHosts(hosts);
+            for (SmartFrogHost h : parsedHosts){
+                this.sfHosts.put(h.getName(), h);
+            }
+        }
         return this;
     }
     
@@ -332,7 +340,7 @@ public class SmartFrogBuilder extends Builder implements SmartFrogActionListener
             allStarted = true;
             for (SmartFrogAction a : sfActions) {
                 if (a.getState() == SmartFrogAction.State.FAILED) {
-                    log("[SmartFrog] ERROR: SmartFrog deamon on host " + a.getHost() + " failed.");
+                    log("[SmartFrog] ERROR: SmartFrog deamon on host " + a.getSfHost() + " failed.");
                     return false;
                 }
                 if (a.getState() == SmartFrogAction.State.STARTING) {
@@ -423,7 +431,7 @@ public class SmartFrogBuilder extends Builder implements SmartFrogActionListener
             return 1;
         int maxNum = 0;
         for(SmartFrogAction a : existingActions){
-            if(a.getHost().equals(host)){
+            if(a.getSfHost().equals(host)){
                 if(a.getLogNum() > maxNum)
                     maxNum = a.getLogNum();
             }
