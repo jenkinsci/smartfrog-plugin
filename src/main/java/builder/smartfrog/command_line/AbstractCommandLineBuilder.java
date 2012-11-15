@@ -5,6 +5,9 @@ import builder.smartfrog.SmartFrogBuilder;
 import builder.smartfrog.SmartFrogHost;
 import builder.smartfrog.SmartFrogInstance;
 import builder.smartfrog.util.Functions;
+import hudson.model.JDK;
+
+import java.util.Map;
 
 /**
  * Created with IntelliJ IDEA.
@@ -14,7 +17,7 @@ import builder.smartfrog.util.Functions;
  * To change this template use File | Settings | File Templates.
  */
 public abstract class AbstractCommandLineBuilder {
-    public static final String DEF_JDK = "\\$JAVA_HOME";
+    public static final String DEF_JDK = "$JAVA_HOME";
 
     private SmartFrogBuilder builder;
     private SmartFrogInstance sfInstance;
@@ -73,7 +76,12 @@ public abstract class AbstractCommandLineBuilder {
     }
 
     public String getJdk(){
-        return host.getJdk() != null ? host.getJdk() : DEF_JDK;
+        // TODO: this can be improved by using getHost().getSfAction().getOwnerBuild().getEnvironment()
+        JDK jdk = getHost().getSfAction().getOwnerBuild().getProject().getJDK();
+        String path =  jdk == null ?  DEF_JDK : jdk.getHome();
+        // TODO: Hack to prevent jenkins from expanding env variables
+        path = path.replace("$", "@");
+        return host.getJdk() != null ? host.getJdk() : path;
     }
 
     public String[] buildDaemonCommandLine() {
