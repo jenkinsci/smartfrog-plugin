@@ -201,7 +201,7 @@ public class SmartFrogAction implements Action, Runnable {
     }
 
     public String getUrlName() {
-        return "console-" + sfHost + "-" + logNum;
+        return "console-" + host.replace(":", "%3a") + "-" + logNum
     }
 
     // required by index.jelly
