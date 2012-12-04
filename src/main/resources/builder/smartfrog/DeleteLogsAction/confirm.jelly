@@ -1,0 +1,23 @@
+
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+  <l:layout title="SmartFrog daemon output - ${it.host}" norefresh="true" permission="${it.getPermission()}">
+    <st:include it="${it.build}" page="sidepanel.jelly" />
+    <l:main-panel>
+      <j:set var="actions" value="${request.getAttribute('actions')}"/>
+      <b>Do you really want to delete these logs?</b>
+      <f:form action="deleteSmartFrogLogs" method="post" name="deleteSmartFrogLogs">
+        <table>
+          <j:forEach var="action" items="${actions}">
+            <tr><td>
+              ${action.getDisplayName()} (${action.getLogFile().name})
+              <input name="${action.getHost()}_${action.getLogNum()}" value="${action.getLogNum()}" type="hidden"/>
+            </td></tr>      
+          </j:forEach>
+          <tr><td>
+            <f:submit name="Delete" value="Delete"/>
+          </td></tr>
+        </table>
+      </f:form>
+    </l:main-panel>
+  </l:layout>
+</j:jelly>

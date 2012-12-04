@@ -1,0 +1,37 @@
+
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+  <l:layout title="SmartFrog daemon output - ${it.host}" norefresh="true" permission="${it.getPermission()}">
+    <st:include it="${it.build}" page="sidepanel.jelly" />
+    <l:main-panel>
+      <j:choose>
+        <j:when test="${it.isAvailable()}">
+          <b>Choose which logs will be deleted:</b>
+          <f:form action="confirmDeleteSmartFrogLogs" method="post" name="deleteSmartFrogLogs">
+          <table>
+            <j:forEach var="action" items="${it.getSmartFrogActions()}">
+              <j:if test="${action.getLogFile().exists()}">
+                <tr><td>
+                  <f:checkbox name="${action.getHost()}_${action.getLogNum()}" title="${action.getDisplayName()} (${action.getLogFile().name})" checked="false"/>
+                </td></tr>
+              </j:if>
+            </j:forEach>
+            <tr><td>
+              <f:submit name="Delete" value="Delete"/>
+            </td></tr>
+         </table>
+         </f:form>
+       </j:when>
+       <j:otherwise>
+        <j:choose>
+          <j:when test="${it.getBuild().isBuilding()}">
+            Logs can not be deleted during building. 
+          </j:when>
+          <j:otherwise>
+            There is not any smartfrog log to delete.
+          </j:otherwise>
+         </j:choose>
+       </j:otherwise>
+      </j:choose>
+    </l:main-panel>
+  </l:layout>
+</j:jelly>

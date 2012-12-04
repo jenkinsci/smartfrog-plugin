@@ -46,6 +46,7 @@ import org.kohsuke.stapler.framework.io.LargeText;
 import builder.smartfrog.util.ConsoleLogger;
 import builder.smartfrog.util.Functions;
 import builder.smartfrog.util.LineFilterOutputStream;
+import java.text.DecimalFormat;
 
 /**
  * 
@@ -176,8 +177,29 @@ public class SmartFrogAction implements Action, Runnable {
         return "/plugin/smartfrog-plugin/icons/smartfrog24.png";
     }
 
-    public String getDisplayName() {
-        return "sfDaemon - " + host + " #" + logNum;
+    public String getDisplayName() {  
+        if(getLogFile().exists())
+            return "sfDaemon - " + host + " #" + logNum  + " (" + getHumanReadableByteSize(getLogFile().length()) + ")";
+        return "sfDaemon - " + host + " #" + logNum  + " (not exists)";
+    }
+    
+    public String getHumanReadableByteSize(long size){
+        String measure = "B";
+        Double number = new Double(size);
+        if(number>=1024){
+            number = number/1024;
+            measure = "KB";
+            if(number>=1024){
+                number = number/1024;
+                measure = "MB";
+                if(number>=1024){
+                    number=number/1024;
+                    measure = "GB";
+                }
+            }
+        }
+        DecimalFormat format = new DecimalFormat("##.00");
+        return format.format(number) + " " + measure;
     }
 
     public String getUrlName() {
