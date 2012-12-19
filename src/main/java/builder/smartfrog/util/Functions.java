@@ -1,9 +1,12 @@
 package builder.smartfrog.util;
 
+import builder.smartfrog.SmartFrogHost;
 import hudson.FilePath;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * 
@@ -30,5 +33,18 @@ public class Functions {
             buf.append(c).append(" ");
         }
         return buf.substring(0, buf.length()-1);
+    }
+
+    public static List<SmartFrogHost> parseHosts(String string){
+        String[] prep = string.split("[ \t]+");
+
+        List<SmartFrogHost> sfHosts = new ArrayList<SmartFrogHost>();
+        for (String p : prep){
+            SmartFrogHost host = SmartFrogHost.fromString(p);
+            if (host != null){
+                sfHosts.add(host);
+            }
+        }
+        return sfHosts;
     }
 }

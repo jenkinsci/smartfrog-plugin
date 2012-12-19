@@ -1,0 +1,30 @@
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define"
+         xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+
+    <table width="100%">
+
+        <f:entry title="Name" field="name" description="Host name">
+            <f:textbox />
+        </f:entry>
+
+        <f:entry title="Platform" field="platform" description="windows | linux | solaris">
+            <f:select field="platform"/>
+        </f:entry>
+
+        <f:entry title="SF_OPTS" field="sfOpts" description="Arguments passed to JVM (since 3.17.014 and higher).">
+            <f:textbox />
+        </f:entry>
+
+        <f:entry title="JAVA_HOME" field="jdk">
+            <f:select field="jdk"/>
+        </f:entry>
+
+        <f:entry title="">
+            <div align="right">
+                <f:repeatableDeleteButton />
+            </div>
+        </f:entry>
+
+    </table>
+
+</j:jelly>
