@@ -285,6 +285,8 @@ public class SmartFrogBuilder extends Builder implements SmartFrogActionListener
             //TODO improve logging
             a.perform(build, launcher, console);
         }
+        if(hostList.length>0)
+            build.addAction(new DeleteLogsAction(build));
         return sfActions;
     }
 
