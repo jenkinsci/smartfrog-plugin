@@ -6,12 +6,16 @@
 		<f:select field="smartFrogName" />
 	</f:entry>
 
-    <f:entry title="Deploy host" field="deployHost" description="Name of the machine for initial deployment.">
+    <f:entry title="Deploy host" field="deployHost" description="Name of the machine for initial deployment. Empty = last target host.">
     	<f:textbox />
     </f:entry>
 
     <f:entry title="Target hosts" field="hosts" description="Whitespace-separated list of target host machines.">
     	<f:textbox />
+    </f:entry>
+
+    <f:entry title="Target hosts file" field="hostsFile" description="List of target host machines (one host per line).">
+      <f:textbox />
     </f:entry>
 
     <f:entry title="SFUSERHOME" field="sfUserHome" description="List of colon-separated paths pointing to directories to SmartFrog components.">
