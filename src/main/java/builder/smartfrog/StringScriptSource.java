@@ -34,7 +34,16 @@ public class StringScriptSource extends ScriptSource {
     }
     
     public void createDefaultScriptFile(AbstractBuild<?,?> build) throws InterruptedException, IOException {
-        FilePath path = build.getWorkspace().createTextTempFile(DEFAULT_SCRIPT_NAME, DEFAULTSCRIPT_SUFFIX, scriptContent, true);
+        StringBuilder content = new StringBuilder(scriptContent);
+        content.append("\n\nJenkins extends Prim {\n");
+        content.append("\tjobName     \"").append(build.getProject().getName()).append("\";\n");
+        content.append("\tbuildNumber \"").append(build.getNumber()).append("\";\n");
+        content.append("\tbuildId     \"").append(build.getId()).append("\";\n");
+        content.append("\tdisplayName \"").append(build.getDisplayName()).append("\";\n");
+        content.append("\tworkspace   \"").append(build.getWorkspace().absolutize().toURI().getPath()).append("\";\n");
+        content.append("\trootDir     \"").append(build.getRootDir()).append("\";\n");
+        content.append("}\n");
+        FilePath path = build.getWorkspace().createTextTempFile(DEFAULT_SCRIPT_NAME, DEFAULTSCRIPT_SUFFIX, content.toString(), true);
         defaultScriptFile = new File(path.getRemote());
     }
     
