@@ -52,6 +52,9 @@
 </f:section>
 
 <f:section title="Deployment configuration">
+   <f:entry title="Display options">
+      <f:checkbox title="Show deploy host on top" field="deployHostOnTop" default="true"/>
+   </f:entry>
 	<j:invokeStatic var="descriptors" className="builder.smartfrog.ScriptSource" method="all" />
 	<j:set var="instance" value="${instance.sfScriptSource}" />
 	<j:forEach var="descriptor" items="${descriptors}">

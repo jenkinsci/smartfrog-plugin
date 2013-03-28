@@ -9,6 +9,12 @@
 		<f:entry title="Script content" field="scriptContent" description="Deployment description">
 			<f:textarea />
 		</f:entry>
+      <f:entry title="Add components">
+         <f:checkbox title="Add Jenkins environment component" field="addJenkins" />
+      </f:entry>
+      <f:entry title="Include files" field="includeFiles" description="One per line, environment vars expanded">
+         <f:textarea />
+      </f:entry>
 		<input type="hidden" name="stapler-class" value="${descriptor.clazz.name}" />
 	</f:radioBlock>
 

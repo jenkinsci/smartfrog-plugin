@@ -21,13 +21,6 @@
  */
 package builder.smartfrog;
 
-import hudson.Launcher;
-import hudson.Proc;
-import hudson.model.Action;
-import hudson.model.BuildListener;
-import hudson.model.StreamBuildListener;
-import hudson.model.AbstractBuild;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileReader;
@@ -39,13 +32,18 @@ import java.io.Reader;
 import java.nio.charset.Charset;
 import java.util.Vector;
 
-import org.kohsuke.stapler.StaplerRequest;
-import org.kohsuke.stapler.StaplerResponse;
-import org.kohsuke.stapler.framework.io.LargeText;
-
 import builder.smartfrog.util.ConsoleLogger;
 import builder.smartfrog.util.Functions;
 import builder.smartfrog.util.LineFilterOutputStream;
+import hudson.Launcher;
+import hudson.Proc;
+import hudson.model.AbstractBuild;
+import hudson.model.Action;
+import hudson.model.BuildListener;
+import hudson.model.StreamBuildListener;
+import org.kohsuke.stapler.StaplerRequest;
+import org.kohsuke.stapler.StaplerResponse;
+import org.kohsuke.stapler.framework.io.LargeText;
 
 /**
  * 
@@ -59,6 +57,7 @@ public class SmartFrogAction implements Action, Runnable {
     private final String host;
     private State state;
     private AbstractBuild<?, ?> build;
+    private int logNum;
 
     private transient SmartFrogBuilder builder;
     private transient Proc proc;
@@ -67,7 +66,6 @@ public class SmartFrogAction implements Action, Runnable {
     private transient Launcher launcher;
     private transient ConsoleLogger console;
     private transient BuildListener log;
-    private final transient int logNum;
 
     public SmartFrogAction(SmartFrogBuilder builder, String host, int logNum) {
         this.builder = builder;
@@ -160,7 +158,13 @@ public class SmartFrogAction implements Action, Runnable {
     }
 
     public File getLogFile() {
-        return new File(build.getRootDir(), host + "_" + logNum + ".log");
+       File logFile = new File(build.getRootDir(), host + "_" + logNum + ".log");
+       // hack to read old builds
+       if (!logFile.exists() && logNum != 1) {
+          logNum = 1;
+          return getLogFile();
+       }
+       return logFile;
     }
     
     private void logUpstream(String message){

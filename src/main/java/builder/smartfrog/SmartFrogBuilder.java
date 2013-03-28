@@ -22,16 +22,14 @@
 package builder.smartfrog;
 
 import java.io.BufferedReader;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import builder.smartfrog.SmartFrogAction.State;
 import builder.smartfrog.util.ConsoleLogger;
@@ -48,7 +46,6 @@ import hudson.model.Descriptor;
 import hudson.model.Result;
 import hudson.tasks.Builder;
 import hudson.util.ListBoxModel;
-import hudson.util.LogTaskListener;
 import net.sf.json.JSONObject;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
@@ -70,71 +67,22 @@ public class SmartFrogBuilder extends Builder implements SmartFrogActionListener
     public static final String ENV_SF_USER_HOME = "SFUSERHOME";
     public static final long HEARTBEAT_PERIOD = 10000;
 
-    // we have to store both definition and replaced values as definition must be provided
-    // in the simple getters and value when used
-    public class ConfigVar {
-        private String definition;
-        private String value;
-
-        public ConfigVar(String definition) {
-            this.definition = definition;
-        }
-
-        public String getDefinition() {
-            return definition;
-        }
-
-        public String getValue() {
-           return value;
-        }
-
-        public void replaceEnvs(AbstractBuild<?, ?> build) {
-            if (definition == null) {
-               return;
-            }
-            Pattern pattern = Pattern.compile("\\$\\{(\\w*)\\}|\\$(\\w*)");
-            List<String> variables = new ArrayList<String>();
-            for (Matcher matcher = pattern.matcher(definition); matcher.find(); ) {
-                for (int i = 1; i <= matcher.groupCount(); ++i) {
-                    if (matcher.group(i) != null) {
-                        variables.add(matcher.group(i));
-                    }
-                }
-            }
-            value = definition;
-            EnvVars env = null;
-            try {
-                env = build.getEnvironment(new LogTaskListener(LOGGER, Level.INFO));
-            } catch (Exception e) {
-                log("[SmartFrog] ERROR: Error retrieving environment variables: " + e);
-            }
-            for (String var : variables) {
-                String varValue = build.getBuildVariables().get(var);
-                if (varValue == null && env != null) {
-                    varValue = env.get(var);
-                }
-                if (varValue == null) {
-                    log("[SmartFrog] ERROR: Error replacing variable " + var);
-                    varValue = "<" + var + ": not found>";
-                }
-                value = value.replaceFirst("\\$\\{\\w*\\}|\\$\\w*", varValue);
-            }
-        }
-    }
-
     private String smartFrogName;
-    private ConfigVar deployHost;
-    private ConfigVar hosts;
-    private ConfigVar hostsFile;
+    private String deployHost;
+    private String hosts;
+    private String hostsFile;
     // SF is able to accept only 4 additional variables (class paths)
-    private ConfigVar sfUserHome;
-    private ConfigVar sfUserHome2;
-    private ConfigVar sfUserHome3;
-    private ConfigVar sfUserHome4;
-    private ConfigVar sfOpts;
-    private ConfigVar sfIni;
+    private String sfUserHome;
+    private String sfUserHome2;
+    private String sfUserHome3;
+    private String sfUserHome4;
+    private String sfOpts;
+    private String sfIni;
     private boolean useAltIni;
+    private boolean deployHostOnTop;
     private ScriptSource sfScriptSource;
+    private List<String> hostList;
+    private EnvVars environment;
 
     // private transient BuildListener listener;
     private transient SmartFrogInstance sfInstance;
@@ -153,22 +101,22 @@ public class SmartFrogBuilder extends Builder implements SmartFrogActionListener
     @Deprecated
     private transient String scriptContent;
 
-    
     @DataBoundConstructor
     public SmartFrogBuilder(String smartFrogName, String deployHost, String hosts, String hostsFile, String sfUserHome,
             String sfUserHome2, String sfUserHome3, String sfUserHome4, String sfOpts, boolean useAltIni, String sfIni,
-            ScriptSource sfScriptSource) {
+            boolean deployHostOnTop, ScriptSource sfScriptSource) {
         this.smartFrogName = smartFrogName;
-        this.deployHost = new ConfigVar(deployHost);
-        this.hosts = new ConfigVar(hosts);
-        this.hostsFile = new ConfigVar(hostsFile);
-        this.sfUserHome = new ConfigVar(sfUserHome);
-        this.sfUserHome2 = new ConfigVar(sfUserHome2);
-        this.sfUserHome3 = new ConfigVar(sfUserHome3);
-        this.sfUserHome4 = new ConfigVar(sfUserHome4);
-        this.sfOpts = new ConfigVar(sfOpts);
+        this.deployHost = deployHost;
+        this.hosts = hosts;
+        this.hostsFile = hostsFile;
+        this.sfUserHome = sfUserHome;
+        this.sfUserHome2 = sfUserHome2;
+        this.sfUserHome3 = sfUserHome3;
+        this.sfUserHome4 = sfUserHome4;
+        this.sfOpts = sfOpts;
         this.useAltIni = useAltIni;
-        this.sfIni = new ConfigVar(sfIni);
+        this.sfIni = sfIni;
+        this.deployHostOnTop = deployHostOnTop;
         this.sfScriptSource = sfScriptSource;
         this.sfInstance = getDescriptor().getSFInstanceByName(smartFrogName);
     }
@@ -182,7 +130,7 @@ public class SmartFrogBuilder extends Builder implements SmartFrogActionListener
             if(scriptSource.equals("path"))
                 sfScriptSource = new FileScriptSource(scriptName,scriptPath);
             if(scriptSource.equals("content"))
-                sfScriptSource = new StringScriptSource(scriptName,scriptContent);
+                sfScriptSource = new StringScriptSource(scriptName, scriptContent, false, "");
         }
         return this;
     }
@@ -192,57 +140,58 @@ public class SmartFrogBuilder extends Builder implements SmartFrogActionListener
     }
 
     public String getDeployHost() {
-        return deployHost.getDefinition();
+        return deployHost;
     }
 
     public String resolveDeployHost() {
-       if (deployHost.getValue() == null || deployHost.getValue().isEmpty()) {
-          String[] hostsList = getHostsList();
-          if (hostsList != null && hostsList.length > 0) {
-             return hostsList[hostsList.length - 1];
-          } else {
-             return deployHost.getValue();
+       if (deployHost == null || deployHost.trim().isEmpty()) {
+          List<String> hostsList = hostList;
+          if (hostsList != null && hostsList.size() > 0) {
+             return hostsList.get(hostsList.size() - 1);
           }
-       } else {
-          return deployHost.getValue();
        }
+       return environment.expand(deployHost);
     }
 
     public String getHosts() {
-        return hosts.getDefinition();
+        return hosts;
     }
 
     public String getHostsFile() {
-        return hostsFile.getDefinition();
+        return hostsFile;
     }
 
    public String getSfUserHome() {
-        return sfUserHome.getDefinition();
+        return sfUserHome;
     }
 
     // Additional SFUSERHOMEs, since 1 is used for Support Libs (terminate hooks).
     public String getSfUserHome2() {
-        return sfUserHome2.getDefinition();
+        return sfUserHome2;
     }
 
     public String getSfUserHome3() {
-        return sfUserHome3.getDefinition();
+        return sfUserHome3;
     }
 
     public String getSfUserHome4() {
-        return sfUserHome4.getDefinition();
+        return sfUserHome4;
     }
 
     public String getSfOpts() {
-        return sfOpts.getDefinition();
+        return sfOpts;
     }
 
     public String getSfIni() {
-        return sfIni.getDefinition();
+        return sfIni;
     }
 
     public boolean isUseAltIni() {
         return useAltIni;
+    }
+
+    public boolean getDeployHostOnTop() {
+        return deployHostOnTop;
     }
 
     public ScriptSource getSfScriptSource() {
@@ -256,19 +205,12 @@ public class SmartFrogBuilder extends Builder implements SmartFrogActionListener
     @Override
     public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener)
         throws IOException, InterruptedException  {
-        // replace all variables
-        hostsFile.replaceEnvs(build);
-        sfUserHome.replaceEnvs(build);
-        sfUserHome2.replaceEnvs(build);
-        sfUserHome3.replaceEnvs(build);
-        sfUserHome4.replaceEnvs(build);
-        sfOpts.replaceEnvs(build);
-        sfIni.replaceEnvs(build);
-
         // transient fields need to be initialize
+        environment = build.getEnvironment();
+        console = new ConsoleLogger(listener);
+        hostList = getHostsList();
         exportMatrixAxes = "";
         componentTerminated = false;
-        console = new ConsoleLogger(listener);
         //reload SF Instance in case global config has changed
         sfInstance = getDescriptor().getSFInstanceByName(smartFrogName);
         // check if SF script exists or create new one
@@ -352,25 +294,22 @@ public class SmartFrogBuilder extends Builder implements SmartFrogActionListener
         return exportedMatrixAxes;
     }
 
-    private String[] getHostsList() {
-        if (hosts.getValue() != null && !hosts.getValue().isEmpty()) {
-           return hosts.getValue().split("[ \t]+");
+    private List<String> getHostsList() {
+        if (hosts != null && !hosts.trim().isEmpty()) {
+           return Arrays.asList(environment.expand(hosts).split("[ \t]+"));
         } else {
+            List<String> hosts = null;
             try {
-                List<String> hosts = new ArrayList<String>();
-                BufferedReader reader = new BufferedReader(new FileReader(hostsFile.getValue()));
+                hosts = new ArrayList<String>();
+                BufferedReader reader = new BufferedReader(new FileReader(environment.expand(hostsFile)));
                 String line;
                 while ((line = reader.readLine()) != null) {
                   hosts.add(line.trim());
                 }
-                return hosts.toArray(new String[0]);
-            } catch (FileNotFoundException e) {
-                log("[SmartFrog] ERROR: Failed to open hosts file: " + e);
-                return null;
             } catch (IOException e) {
                 log("[SmartFrog] ERROR: Failed to read hosts file: " + e);
-                return null;
             }
+            return hosts;
         }
     }
 
@@ -378,26 +317,35 @@ public class SmartFrogBuilder extends Builder implements SmartFrogActionListener
      * Create daemons and run them 
      */
     private SmartFrogAction[] createDaemons(AbstractBuild<?, ?> build, Launcher launcher) throws IOException, InterruptedException {
-       String[] hostList = getHostsList();
         if (hostList == null) {
            return null;
         }
-        SmartFrogAction[] sfActions = new SmartFrogAction[hostList.length];
+        String deployHost = resolveDeployHost();
+        List<SmartFrogAction> sfActions = new ArrayList<SmartFrogAction>(hostList.size());
         // start daemons
-        for (int k = 0; k < hostList.length; k++) {
-            String host = hostList[k];
-            int logNum = getNextActionNumber(build, host);
-            SmartFrogAction a = new SmartFrogAction(this, host, logNum);
-            build.addAction(a);
-            a.addStateListener(this);
-            sfActions[k] = a;
-            //TODO improve logging
-            a.perform(build, launcher, console);
+        if (deployHostOnTop) {
+            // let the deploy host be first in the list
+            sfActions.add(createAction(build, launcher, deployHost));
         }
-        return sfActions;
+        for (String host : hostList) {
+            if (!deployHostOnTop || !host.equals(deployHost)) {
+               sfActions.add(createAction(build, launcher, host));
+            }
+        }
+        return sfActions.toArray(new SmartFrogAction[]{});
     }
 
-    /**
+   private SmartFrogAction createAction(AbstractBuild<?, ?> build, Launcher launcher, String host) throws IOException, InterruptedException {
+      int logNum = getNextActionNumber(build, host);
+      SmartFrogAction a = new SmartFrogAction(this, host, logNum);
+      build.addAction(a);
+      a.addStateListener(this);
+      //TODO improve logging
+      a.perform(build, launcher, console);
+      return a;
+   }
+
+   /**
      * Waits for all daemons to be ready, if one of them fails, fail whole build
      */
     private synchronized boolean daemonsReady(SmartFrogAction[] sfActions) {
@@ -430,7 +378,13 @@ public class SmartFrogBuilder extends Builder implements SmartFrogActionListener
     }
     
     private boolean deployTerminateHook(AbstractBuild<?, ?> build, Launcher launcher) {
-        String[] deploySLCl = buildDeployCommandLine(resolveDeployHost(), sfInstance.getSupportScriptPath(), "terminate-hook", Functions.convertWsToCanonicalPath(build.getWorkspace()));
+       EnvVars environment = null;
+       try {
+          environment = build.getEnvironment();
+       } catch (Exception e) {
+          environment = new EnvVars();
+       }
+       String[] deploySLCl = buildDeployCommandLine(resolveDeployHost(), sfInstance.getSupportScriptPath(), "terminate-hook", Functions.convertWsToCanonicalPath(build.getWorkspace()));
         try {
             int status = launcher.launch().cmds(deploySLCl).envs(build.getEnvironment(console.getListener())).stdout(console.getListener()).pwd(build.getWorkspace()).join();
             if (status != 0) {
@@ -505,21 +459,22 @@ public class SmartFrogBuilder extends Builder implements SmartFrogActionListener
     }
     
     protected String[] buildDaemonCommandLine(String host, String workspace) {
-        String iniPath = useAltIni ? sfIni.getValue() : sfInstance.getPath() + "/bin/default.ini";
+        String iniPath = useAltIni ? environment.expand(sfIni) : sfInstance.getPath() + "/bin/default.ini";
         return new String[] { "bash", "-xe", sfInstance.getSupport() + "/runSF.sh", host, sfInstance.getPath(),
-                sfUserHome.getValue(), sfInstance.getSupport(), sfUserHome2.getValue(), sfUserHome3.getValue(),
-                sfUserHome4.getValue(), workspace, getSfOpts(), iniPath, exportMatrixAxes };
+                environment.expand(sfUserHome), sfInstance.getSupport(), environment.expand(sfUserHome2),
+                environment.expand(sfUserHome3), environment.expand(sfUserHome4),
+                workspace, getSfOpts(), iniPath, exportMatrixAxes };
     }
 
     protected String[] buildStopDaemonCommandLine(String host) {
         return new String[] { "bash", "-xe", sfInstance.getSupport() + "/stopSF.sh", host, sfInstance.getPath(),
-                sfUserHome.getValue() };
+                environment.expand(sfUserHome) };
     }
 
     protected String[] buildDeployCommandLine(String host, String scriptPath, String componentName, String workspace) {
         return new String[] { "bash", "-xe", sfInstance.getSupport() + "/deploySF.sh", host, sfInstance.getPath(),
-                sfUserHome.getValue(), sfInstance.getSupport(), sfUserHome2.getValue(), sfUserHome3.getValue(),
-                sfUserHome4.getValue(), scriptPath, //sfInstance.getSupportScriptPath(),
+                environment.expand(sfUserHome), sfInstance.getSupport(), environment.expand(sfUserHome2),
+                environment.expand(sfUserHome3), environment.expand(sfUserHome4), scriptPath, //sfInstance.getSupportScriptPath(),
                 componentName, workspace, exportMatrixAxes };
     }
 
