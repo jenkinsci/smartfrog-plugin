@@ -96,7 +96,7 @@ public class SmartFrogBuilder extends Builder implements SmartFrogActionListener
     @Deprecated
     private transient String scriptSource;
     @Deprecated
-   private transient String scriptContent;
+    private transient String scriptContent;
 
     @DataBoundConstructor
     public SmartFrogBuilder(String smartFrogName, String deployHost, String hosts, String sfUserHome,
