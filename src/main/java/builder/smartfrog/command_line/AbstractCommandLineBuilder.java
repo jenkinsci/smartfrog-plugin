@@ -1,20 +1,13 @@
 package builder.smartfrog.command_line;
 
-import builder.smartfrog.SmartFrogAction;
+import hudson.model.JDK;
 import builder.smartfrog.SmartFrogBuilder;
 import builder.smartfrog.SmartFrogHost;
 import builder.smartfrog.SmartFrogInstance;
 import builder.smartfrog.util.Functions;
-import hudson.model.JDK;
-
-import java.util.Map;
 
 /**
- * Created with IntelliJ IDEA.
- * User: jcechace
- * Date: 8/13/12
- * Time: 1:37 AM
- * To change this template use File | Settings | File Templates.
+ * @author jcechace
  */
 public abstract class AbstractCommandLineBuilder {
     public static final String DEF_JDK = "$JAVA_HOME";

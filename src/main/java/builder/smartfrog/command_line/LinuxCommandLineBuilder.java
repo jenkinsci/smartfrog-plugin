@@ -1,19 +1,15 @@
 package builder.smartfrog.command_line;
 
-import builder.smartfrog.SmartFrogAction;
-import builder.smartfrog.SmartFrogHost;
 import hudson.matrix.Combination;
 import hudson.matrix.MatrixConfiguration;
 import hudson.model.AbstractBuild;
 
 import java.util.Map;
 
+import builder.smartfrog.SmartFrogHost;
+
 /**
- * Created with IntelliJ IDEA.
- * User: jcechace
- * Date: 8/13/12
- * Time: 1:35 AM
- * To change this template use File | Settings | File Templates.
+ * @author jcechace
  */
 public class LinuxCommandLineBuilder extends AbstractCommandLineBuilder implements CommandLineBuilder {
 

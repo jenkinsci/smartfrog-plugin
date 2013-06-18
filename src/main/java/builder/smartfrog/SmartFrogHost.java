@@ -5,19 +5,15 @@ import hudson.model.AbstractDescribableImpl;
 import hudson.model.Descriptor;
 import hudson.model.Hudson;
 import hudson.model.JDK;
-import hudson.tasks.Builder;
 import hudson.util.ListBoxModel;
-import org.kohsuke.stapler.DataBoundConstructor;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import org.kohsuke.stapler.DataBoundConstructor;
+
 /**
- * Created with IntelliJ IDEA.
- * User: jcechace
- * Date: 8/23/12
- * Time: 10:31 AM
- * To change this template use File | Settings | File Templates.
+ * @author jcechace
  */
 public class SmartFrogHost extends AbstractDescribableImpl<SmartFrogHost> {
 //public class SmartFrogHost {

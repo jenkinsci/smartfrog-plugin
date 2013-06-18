@@ -1,14 +1,9 @@
 package builder.smartfrog.command_line;
 
-import builder.smartfrog.SmartFrogAction;
 import builder.smartfrog.SmartFrogHost;
 
 /**
- * Created with IntelliJ IDEA.
- * User: jcechace
- * Date: 8/13/12
- * Time: 1:43 AM
- * To change this template use File | Settings | File Templates.
+ * @author jcechace
  */
 
 // TODO: Implemet this
