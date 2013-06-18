@@ -90,9 +90,10 @@ public class SmartFrogAction implements Action, Runnable {
         this.prefixId = "";
     }
     
-    public SmartFrogAction(SmartFrogBuilder builder, String host, String prefixId) {
+    public SmartFrogAction(SmartFrogBuilder builder, SmartFrogHost host, String prefixId) {
         this.builder = builder;
-        this.host = host;
+        this.sfHost = host;
+        this.host = sfHost.getName();
         this.state = State.STARTING;
         this.prefixId = prefixId;
     }
@@ -100,7 +101,7 @@ public class SmartFrogAction implements Action, Runnable {
     protected Object readResolve(){
         if(prefixId == null)
             prefixId = "";
-        if (this.sfHost == null){
+        if (this.sfHost == null)
             this.sfHost = SmartFrogHost.fromString(this.host);
         return this;
     }

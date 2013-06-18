@@ -21,7 +21,6 @@
  */
 package builder.smartfrog;
 
-import builder.smartfrog.command_line.CommandLineBuilderFactory;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
@@ -36,10 +35,10 @@ import hudson.util.ListBoxModel;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
-
 import java.util.logging.Logger;
 
 import net.sf.json.JSONObject;
@@ -48,6 +47,7 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
 
 import builder.smartfrog.SmartFrogAction.State;
+import builder.smartfrog.command_line.CommandLineBuilderFactory;
 import builder.smartfrog.util.ConsoleLogger;
 import builder.smartfrog.util.Functions;
 
@@ -224,6 +224,10 @@ public class SmartFrogBuilder extends Builder implements SmartFrogActionListener
         return new String[] { "bash", "-xe", sfInstance.getSupport() + "/stopSF.sh", host, sfInstance.getPath(),
                 sfUserHome };
     }
+    
+    protected String[] buildKilleThemAllCommandLine(String host) {
+        return new String[] { "bash", "-xe", sfInstance.getSupport() + "/killThemAll.sh", host};
+    }
 
     @Deprecated
     protected String[] buildDeployCommandLine(String host, String scriptPath, String componentName, String workspace) {
@@ -332,7 +336,6 @@ public class SmartFrogBuilder extends Builder implements SmartFrogActionListener
         // start daemons
         int k = 0;
         for (SmartFrogHost host : sfHosts.values()) {
-            int logNum = getNextActionNumber(build, host);
             SmartFrogAction a = new SmartFrogAction(this, host, builderId);
             host.setSfAction(a);
             build.addAction(a);
