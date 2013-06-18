@@ -69,6 +69,7 @@ public class SmartFrogAction implements Action, Runnable {
     private static final String NL = System.getProperty("line.separator");
 
     private SmartFrogHost sfHost;
+    @Deprecated
     private String host;
     private State state;
     private AbstractBuild<?, ?> build;
@@ -83,9 +84,9 @@ public class SmartFrogAction implements Action, Runnable {
     private transient BuildListener log;
     private transient String readableLogSize;
 
-    public SmartFrogAction(SmartFrogBuilder builder, String host) {
+    public SmartFrogAction(SmartFrogBuilder builder, SmartFrogHost sfHost) {
         this.builder = builder;
-        this.host = host;
+        this.sfHost = sfHost;
         this.state = State.STARTING;
         this.prefixId = "";
     }
@@ -135,7 +136,7 @@ public class SmartFrogAction implements Action, Runnable {
         log = new StreamBuildListener(new PrintStream(new SFFilterOutputStream(new FileOutputStream(getLogFile()))),
                 Charset.defaultCharset());
         proc = launcher.launch().cmds(cl).envs(build.getEnvironment(log)).pwd(build.getWorkspace()).stdout(log).start();
-        execThread = new Thread(this, "SFDaemon - " + sfHost);
+        execThread = new Thread(this, "SFDaemon - " + sfHost.getName());
         execThread.start();
     }
 
@@ -156,11 +157,11 @@ public class SmartFrogAction implements Action, Runnable {
             log.getLogger().close();
         }
         if(status != 0){
-            logUpstream("[SmartFrog] INFO: Daemon on sfHost " + sfHost + " failed");
+            logUpstream("[SmartFrog] INFO: Daemon on sfHost " + sfHost.getName() + " failed");
             setState(State.FAILED);
             return;
         }
-        logUpstream("[SmartFrog] INFO: Daemon on sfHost " + sfHost + " finished");
+        logUpstream("[SmartFrog] INFO: Daemon on sfHost " + sfHost.getName() + " finished");
         setState(State.FINISHED);
     }
 
@@ -169,7 +170,7 @@ public class SmartFrogAction implements Action, Runnable {
 
         String[] cl = commandLineBuilder.buildStopDaemonCommandLine();
 
-        logUpstream("[SmartFrog] INFO: Trying to interrupt daemon on sfHost " + sfHost);
+        logUpstream("[SmartFrog] INFO: Trying to interrupt daemon on sfHost " + sfHost.getName());
         logUpstream("[SmartFrog] INFO: Interrupt command is " + Functions.cmdArrayToString(cl));
         try {
             //TODO possible concurrent writing into log (from interrupt() as well as from run())!! (however synchronization could lead to livelock)
@@ -178,7 +179,7 @@ public class SmartFrogAction implements Action, Runnable {
             if(exitCode != 0) { 
                 // something went wrong, let's try hard kill, also with timeout as whole machine can be unresponsive
                 // TODO replace with something more sophisticated/universal than bash script
-                String[] cmd = builder.buildKilleThemAllCommandLine(host);    
+                String[] cmd = builder.buildKilleThemAllCommandLine(sfHost.getName());    
                 Proc killThemAll = launcher.launch().cmds(cmd).envs(build.getEnvironment(log)).pwd(build.getWorkspace()).stdout(log).start();
                 // still can take some time if e.g. server is under heavy load due to deadlock or something like this, so let wait few minutes too
                 exitCode = killProc.joinWithTimeout(3, TimeUnit.MINUTES, console.getListener());
@@ -201,7 +202,7 @@ public class SmartFrogAction implements Action, Runnable {
         if (this.getState() == s)
             return;
         this.state = s;
-        logUpstream("[SmartFrog] INFO: Deamon on sfHost " + sfHost + " has changed state to " + state.toString());
+        logUpstream("[SmartFrog] INFO: Deamon on sfHost " + sfHost.getName() + " has changed state to " + state.toString());
         for (SmartFrogActionListener l : listeners)
             l.stateChanged();
     }
@@ -215,7 +216,7 @@ public class SmartFrogAction implements Action, Runnable {
     }
     
     public File getLogFile() {
-        String logFileName = host;
+        String logFileName = sfHost.getName();
         if(!prefixId.isEmpty())
             logFileName = prefixId + "_" +logFileName;
         
@@ -240,14 +241,14 @@ public class SmartFrogAction implements Action, Runnable {
 
     public String getDisplayName() {
         if(prefixId.isEmpty())
-            return "sfDaemon - " + host;
-        return "sfDaemon - " + host + " (" + prefixId + ")" ;
+            return "sfDaemon - " + sfHost.getName();
+        return "sfDaemon - " + sfHost.getName() + " (" + prefixId + ")" ;
     }
 
     public String getUrlName() {
         if(prefixId.isEmpty())
-            return "console-" + Util.rawEncode(host);
-        return prefixId + "-console-" + Util.rawEncode(host);
+            return "console-" + Util.rawEncode(sfHost.getName());
+        return prefixId + "-console-" + Util.rawEncode(sfHost.getName());
     }
 
     // required by index.jelly
