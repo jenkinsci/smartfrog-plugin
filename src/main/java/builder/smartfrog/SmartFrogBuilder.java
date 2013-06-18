@@ -100,7 +100,7 @@ public class SmartFrogBuilder extends Builder implements SmartFrogActionListener
 
     @DataBoundConstructor
     public SmartFrogBuilder(String smartFrogName, String deployHost, String hosts, String sfUserHome,
-            String sfUserHome2, String sfUserHome3, String sfUserHome4, String sfOpts, boolean useAltIni, String sfIni,
+            String sfUserHome2, String sfUserHome3, String sfUserHome4, String sfOpts, String builderId, boolean useAltIni, String sfIni,
             ScriptSource sfScriptSource, List<SmartFrogHost> hostList) {
         this.smartFrogName = smartFrogName;
         this.deployHost = deployHost;
