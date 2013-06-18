@@ -1,62 +1,74 @@
-<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout"
+         xmlns:t="/lib/hudson" xmlns:f="/lib/form">
 
-<f:section title="SmartFrog environment">  
+    <f:section title="SmartFrog environment">
 
-	<f:entry title="SmartFrog instance">
-		<f:select field="smartFrogName" />
-	</f:entry>
+        <f:entry title="SmartFrog instance">
+            <f:select field="smartFrogName"/>
+        </f:entry>
 
-    <f:entry title="Deploy host" field="deployHost" description="Name of the machine for initial deployment.">
-    	<f:textbox />
-    </f:entry>
+        <f:entry title="Deploy host" field="deployHost" description="Name of the machine for initial deployment.">
+            <f:textbox/>
+        </f:entry>
 
-    <f:entry title="Target hosts" field="hosts" description="Whitespace-separated list of target host machines.">
-    	<f:textbox />
-    </f:entry>
+        <f:entry title="Target hosts"  description="Whitespace-separated list of target host machines.">
+            <f:textbox field="hosts"/>
+            <f:repeatable field="hostList">
+                <st:include page="config.jelly" class="builder.smartfrog.SmartFrogHost"/>
+            </f:repeatable>
+        </f:entry>
 
-    <f:entry title="SFUSERHOME" field="sfUserHome" description="List of colon-separated paths pointing to directories to SmartFrog components.">
-   		<f:textbox />
-    </f:entry>
+            <!--<f:optionalBlock field="hostsCfg" title="Detailed hosts settings" inline="true">-->
 
-    <f:entry title="SFUSERHOME2" field="sfUserHome2" description="Path to put on classpath and load classes from JARs passed to sfDaemon.">
-    	<f:textbox />
-    </f:entry>
+        <f:entry title="SFUSERHOME" field="sfUserHome"
+                 description="List of colon-separated paths pointing to directories to SmartFrog components.">
+            <f:textbox/>
+        </f:entry>
 
-    <f:entry title="SFUSERHOME3" field="sfUserHome3" description="Path to put on classpath and load classes from JARs passed to sfDaemon.">
-    	<f:textbox />
-    </f:entry>
+        <f:entry title="SFUSERHOME2" field="sfUserHome2"
+                 description="Path to put on classpath and load classes from JARs passed to sfDaemon.">
+            <f:textbox/>
+        </f:entry>
 
-    <f:entry title="SFUSERHOME4" field="sfUserHome4" description="Path to put on classpath and load classes from JARs passed to sfDaemon.">
-    	<f:textbox />
-    </f:entry>
+        <f:entry title="SFUSERHOME3" field="sfUserHome3"
+                 description="Path to put on classpath and load classes from JARs passed to sfDaemon.">
+            <f:textbox/>
+        </f:entry>
 
-    <!-- Since 3.17.014, see http://jira.smartfrog.org/jira/browse/SFOS-1234 for more information. -->
-    <f:entry title="SF_OPTS" field="sfOpts" description="Arguments passed to JVM (since 3.17.014 and higher).">
-    	<f:textbox />
-    </f:entry>
-    
-    <f:entry title="Unique build step ID" field="builderId" description="Unique ID which identifies this build step. Usefull when you run multiple SF build steps in on jobs.">
-        <f:textbox />
-    </f:entry>
+        <f:entry title="SFUSERHOME4" field="sfUserHome4"
+                 description="Path to put on classpath and load classes from JARs passed to sfDaemon.">
+            <f:textbox/>
+        </f:entry>
 
-   <f:block>
-     <table>
-       <f:optionalBlock field="useAltIni" inline="true" title="Use an alternate non-default SmartFrog configuration">
-         <f:entry title="Path to alternate SmartFrog configuration" field="sfIni">
-           <f:textbox />
-         </f:entry>
-       </f:optionalBlock>
-     </table>
-   </f:block>
+        <!-- Since 3.17.014, see http://jira.smartfrog.org/jira/browse/SFOS-1234 for more information. -->
+        <f:entry title="SF_OPTS" field="sfOpts" description="Arguments passed to JVM (since 3.17.014 and higher).">
+            <f:textbox/>
+        </f:entry>
 
-</f:section>
+	<f:entry title="Unique build step ID" field="builderId" description="Unique ID which identifies this build step. Usefull when you run multiple SF build steps in on jobs.">
+            <f:textbox />
+        </f:entry>
 
-<f:section title="Deployment configuration">
-	<j:invokeStatic var="descriptors" className="builder.smartfrog.ScriptSource" method="all" />
-	<j:set var="instance" value="${instance.sfScriptSource}" />
-	<j:forEach var="descriptor" items="${descriptors}">
-		<st:include page="${descriptor.configPage}" from="${descriptor}"/>
-	</j:forEach>
-</f:section>
+
+        <f:block>
+            <table>
+                <f:optionalBlock field="useAltIni" inline="true"
+                                 title="Use an alternate non-default SmartFrog configuration">
+                    <f:entry title="Path to alternate SmartFrog configuration" field="sfIni">
+                        <f:textbox/>
+                    </f:entry>
+                </f:optionalBlock>
+            </table>
+        </f:block>
+
+    </f:section>
+
+    <f:section title="Deployment configuration">
+        <j:invokeStatic var="descriptors" className="builder.smartfrog.ScriptSource" method="all"/>
+        <j:set var="instance" value="${instance.sfScriptSource}"/>
+        <j:forEach var="descriptor" items="${descriptors}">
+            <st:include page="${descriptor.configPage}" from="${descriptor}"/>
+        </j:forEach>
+    </f:section>
 
 </j:jelly>

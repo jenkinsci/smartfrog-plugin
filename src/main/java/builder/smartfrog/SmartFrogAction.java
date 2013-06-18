@@ -21,6 +21,8 @@
  */
 package builder.smartfrog;
 
+import builder.smartfrog.command_line.CommandLineBuilder;
+import builder.smartfrog.command_line.CommandLineBuilderFactory;
 import hudson.Launcher;
 import hudson.Proc;
 import hudson.Util;
@@ -66,7 +68,8 @@ public class SmartFrogAction implements Action, Runnable {
 
     private static final String NL = System.getProperty("line.separator");
 
-    private final String host;
+    private SmartFrogHost sfHost;
+    private String host;
     private State state;
     private AbstractBuild<?, ?> build;
     private String prefixId;
@@ -97,11 +100,13 @@ public class SmartFrogAction implements Action, Runnable {
     protected Object readResolve(){
         if(prefixId == null)
             prefixId = "";
+        if (this.sfHost == null){
+            this.sfHost = SmartFrogHost.fromString(this.host);
         return this;
     }
 
-    public String getHost() {
-        return host;
+    public SmartFrogHost getSfHost() {
+        return sfHost;
     }
     
     public String getReadableLogSize() {
@@ -109,20 +114,27 @@ public class SmartFrogAction implements Action, Runnable {
             readableLogSize = hudson.Functions.humanReadableByteSize(getLogFile().length());
         return readableLogSize;
     }
-    
+
+
+    public SmartFrogBuilder getBuilder(){
+        return builder;
+    }
+
     public void perform(final AbstractBuild<?, ?> build, final Launcher launcher, final ConsoleLogger console) throws IOException,
             InterruptedException {
         this.build = build;
         this.launcher = launcher;
         this.console = console;
 
-        String[] cl = builder.buildDaemonCommandLine(host, Functions.convertWsToCanonicalPath(build.getWorkspace()));
-        logUpstream("[SmartFrog] INFO: Starting daemon on host " + host);
+        CommandLineBuilder commandLineBuilder = CommandLineBuilderFactory.getInstance(this.getSfHost());
+
+        String[] cl = commandLineBuilder.buildDaemonCommandLine();
+        logUpstream("[SmartFrog] INFO: Starting daemon on sfHost " + sfHost);
         logUpstream("[SmartFrog] INFO: Start command is " + Functions.cmdArrayToString(cl));
         log = new StreamBuildListener(new PrintStream(new SFFilterOutputStream(new FileOutputStream(getLogFile()))),
                 Charset.defaultCharset());
         proc = launcher.launch().cmds(cl).envs(build.getEnvironment(log)).pwd(build.getWorkspace()).stdout(log).start();
-        execThread = new Thread(this, "SFDaemon - " + host);
+        execThread = new Thread(this, "SFDaemon - " + sfHost);
         execThread.start();
     }
 
@@ -143,17 +155,20 @@ public class SmartFrogAction implements Action, Runnable {
             log.getLogger().close();
         }
         if(status != 0){
-            logUpstream("[SmartFrog] INFO: Daemon on host " + host + " failed");
+            logUpstream("[SmartFrog] INFO: Daemon on sfHost " + sfHost + " failed");
             setState(State.FAILED);
             return;
         }
-        logUpstream("[SmartFrog] INFO: Daemon on host " + host + " finished");
+        logUpstream("[SmartFrog] INFO: Daemon on sfHost " + sfHost + " finished");
         setState(State.FINISHED);
     }
 
     public void interrupt() {
-        String[] cl = builder.buildStopDaemonCommandLine(host);
-        logUpstream("[SmartFrog] INFO: Trying to interrupt daemon on host " + host);
+        CommandLineBuilder commandLineBuilder = CommandLineBuilderFactory.getInstance(this.getSfHost());
+
+        String[] cl = commandLineBuilder.buildStopDaemonCommandLine();
+
+        logUpstream("[SmartFrog] INFO: Trying to interrupt daemon on sfHost " + sfHost);
         logUpstream("[SmartFrog] INFO: Interrupt command is " + Functions.cmdArrayToString(cl));
         try {
             //TODO possible concurrent writing into log (from interrupt() as well as from run())!! (however synchronization could lead to livelock)
@@ -185,7 +200,7 @@ public class SmartFrogAction implements Action, Runnable {
         if (this.getState() == s)
             return;
         this.state = s;
-        logUpstream("[SmartFrog] INFO: Deamon on host " + host + " has changed state to " + state.toString());
+        logUpstream("[SmartFrog] INFO: Deamon on sfHost " + sfHost + " has changed state to " + state.toString());
         for (SmartFrogActionListener l : listeners)
             l.stateChanged();
     }
