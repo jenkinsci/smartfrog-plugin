@@ -16,7 +16,6 @@ import org.kohsuke.stapler.DataBoundConstructor;
  * @author jcechace
  */
 public class SmartFrogHost extends AbstractDescribableImpl<SmartFrogHost> {
-//public class SmartFrogHost {
     public static final Platform DEF_PLATFORM = Platform.LINUX;
 
     private SmartFrogAction sfAction;
