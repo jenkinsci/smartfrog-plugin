@@ -211,7 +211,7 @@ public class SmartFrogBuilder extends Builder implements SmartFrogActionListener
     }
 
 // TODO: can we remove these?
-    @Deprecated
+    /*@Deprecated
     protected String[] buildDaemonCommandLine(String host, String workspace) {
         String iniPath = useAltIni ? sfIni : sfInstance.getPath() + "/bin/default.ini";
         return new String[] { "bash", "-xe", sfInstance.getSupport() + "/runSF.sh", host, sfInstance.getPath(),
@@ -223,14 +223,14 @@ public class SmartFrogBuilder extends Builder implements SmartFrogActionListener
     protected String[] buildStopDaemonCommandLine(String host) {
         return new String[] { "bash", "-xe", sfInstance.getSupport() + "/stopSF.sh", host, sfInstance.getPath(),
                 sfUserHome };
-    }
+    }*/
     
     //TODO move to command line builder
     protected String[] buildKilleThemAllCommandLine(String host) {
         return new String[] { "bash", "-xe", sfInstance.getSupport() + "/killThemAll.sh", host};
     }
 
-    @Deprecated
+    /*@Deprecated
     protected String[] buildDeployCommandLine(String host, String scriptPath, String componentName, String workspace) {
         return new String[] { "bash", "-xe", sfInstance.getSupport() + "/deploySF.sh", host, sfInstance.getPath(),
                 sfUserHome, sfInstance.getSupport(), sfUserHome2, sfUserHome3, sfUserHome4, scriptPath, //sfInstance.getSupportScriptPath(),
@@ -250,7 +250,7 @@ public class SmartFrogBuilder extends Builder implements SmartFrogActionListener
             }
         }
         return exportedMatrixAxes;
-    }
+    }*/
 
     @Override
     public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener)
