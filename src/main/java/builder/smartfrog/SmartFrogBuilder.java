@@ -225,6 +225,7 @@ public class SmartFrogBuilder extends Builder implements SmartFrogActionListener
                 sfUserHome };
     }
     
+    //TODO move to command line builder
     protected String[] buildKilleThemAllCommandLine(String host) {
         return new String[] { "bash", "-xe", sfInstance.getSupport() + "/killThemAll.sh", host};
     }
