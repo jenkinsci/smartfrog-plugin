@@ -198,7 +198,7 @@ public class SmartFrogBuilder extends Builder implements SmartFrogActionListener
         // Export Matrix parameters if matrix project block
         if (build.getProject() instanceof MatrixConfiguration)
             exportMatrixAxes = exportMatrixAxes(build);
-
+        
         // create daemons and run them
         SmartFrogAction[] sfActions = createDaemons(build, launcher);
         // wait until all daemons are ready

@@ -125,6 +125,14 @@ public class SmartFrogAction implements Action, Runnable {
         execThread = new Thread(this, "SFDaemon - " + host);
         execThread.start();
     }
+    
+    /**
+     * For testing purposes
+     * @param build 
+     */
+    protected void setBuild(AbstractBuild<?, ?> build){
+        this.build = build;
+    }
 
     public void run() {
         // wait for process to finish
