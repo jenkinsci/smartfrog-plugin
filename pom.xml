@@ -11,7 +11,7 @@
 
     <artifactId>smartfrog-plugin</artifactId>
     <packaging>hpi</packaging>
-    <version>2.2.6</version>
+    <version>2.2.7-SNAPSHOT</version>
     <name>SmartFrog Builder</name>
     <url>https://wiki.jenkins-ci.org/display/JENKINS/SmartFrog+Plugin</url>
     
