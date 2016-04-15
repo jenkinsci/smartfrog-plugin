@@ -56,6 +56,10 @@ import org.kohsuke.stapler.interceptor.RequirePOST;
 import builder.smartfrog.util.ConsoleLogger;
 import builder.smartfrog.util.Functions;
 import builder.smartfrog.util.LineFilterOutputStream;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.zip.GZIPOutputStream;
+import org.apache.commons.io.IOUtils;
 
 /**
  * 
@@ -278,6 +282,28 @@ public class SmartFrogAction implements Action, Runnable {
                 build.save();
             }
         rsp.sendRedirect2(req.getContextPath()+'/' + build.getUrl());
+    }
+    
+    public void compressLog() {
+        File logFile = getLogFile();
+        File compressedLog = new File(logFile.getParentFile(), logFile.getName()+".gz");
+        GZIPOutputStream gzos = null;
+        FileInputStream ist = null;
+        try{
+            gzos = new GZIPOutputStream(new FileOutputStream(compressedLog));
+            ist = new FileInputStream(logFile);
+            IOUtils.copy(ist, gzos);
+            gzos.finish();
+        }
+        catch(IOException e){
+             Logger.getLogger(SmartFrogBuildListener.class.getName()).log(Level.WARNING, "was not able to compress log file " + logFile.getAbsolutePath(), e);
+             if(ist!=null)
+                 IOUtils.closeQuietly(ist);
+             if(gzos!=null)
+                 IOUtils.closeQuietly(gzos);
+             return;
+        }
+        logFile.delete();
     }
     
     private class SFFilterOutputStream extends LineFilterOutputStream {

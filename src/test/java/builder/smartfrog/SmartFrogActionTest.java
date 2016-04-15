@@ -31,13 +31,11 @@ public class SmartFrogActionTest {
         AbstractBuild run = project.getLastBuild();
         SmartFrogAction action = new SmartFrogAction(null,"localhost");
         action.setBuild(run);
-        run.addAction(action);
         SmartFrogBuildListener listener = RunListener.all().get(SmartFrogBuildListener.class);
         PrintStream st = new PrintStream(action.getLogFile());
         st.println("testing log");
         st.close();
-        listener.onFinalized(run);
-        waitForCompressionIsFinished();
+        action.compressLog();
         assertTrue("Log is not compressed.", action.getLogFile().getName().equals("localhost.log.gz") && action.getLogFile().exists());
         GZIPInputStream inputStream = new GZIPInputStream(new FileInputStream(action.getLogFile()));
         BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
@@ -45,20 +43,6 @@ public class SmartFrogActionTest {
         reader.close();
         assertEquals("Compressed log does not contain original log.", "testing log", log);
         
-    }
-    
-    private void waitForCompressionIsFinished() throws InterruptedException{
-        boolean compressionIsNotFinished = true;
-        while(compressionIsNotFinished){
-            compressionIsNotFinished = false;
-            for(Thread t: Thread.getAllStackTraces().keySet()){
-                if(t.getName().contains("Compression smartfrog logs")){
-                    compressionIsNotFinished = true;
-                    break;
-                }  
-            }
-            Thread.sleep(500);
-        }
     }
 
 }
