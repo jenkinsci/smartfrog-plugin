@@ -22,12 +22,14 @@ package builder.smartfrog;
 
 import hudson.Extension;
 import hudson.model.Action;
+import hudson.model.Computer;
 import hudson.model.Run;
 import hudson.model.listeners.RunListener;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.GZIPOutputStream;
@@ -42,12 +44,16 @@ public class SmartFrogBuildListener extends RunListener<Run>{
     
     @Override
     public void onFinalized(Run r){
-        for(Action a :r.getActions()){
-            if(a instanceof SmartFrogAction){
-                SmartFrogAction sfAction = (SmartFrogAction) a;
-                File log = sfAction.getLogFile();
-                compressLog(log, new File(log.getParentFile(),log.getName()+".gz"));
-            }
+        final List<SmartFrogAction> actions = r.getActions(SmartFrogAction.class);
+        if(!actions.isEmpty()){
+            Computer.threadPoolForRemoting.submit(new Thread("Compression smartfrog logs of build " + r.getDisplayName() + " of job " + r.getParent().getDisplayName()) {
+                public void run() {
+                    for(SmartFrogAction sfAction :actions){
+                        File log = sfAction.getLogFile();
+                        compressLog(log, new File(log.getParentFile(),log.getName()+".gz"));
+                    }
+                }
+            });
         }
     }   
     
@@ -61,7 +67,7 @@ public class SmartFrogBuildListener extends RunListener<Run>{
             gzos.finish();
         }
         catch(IOException e){
-             Logger.getLogger(SmartFrogBuildListener.class.getName()).log(Level.WARNING, "was not able to compress log file ", e);
+             Logger.getLogger(SmartFrogBuildListener.class.getName()).log(Level.WARNING, "was not able to compress log file " + log.getAbsolutePath(), e);
              if(ist!=null)
                  IOUtils.closeQuietly(ist);
              if(gzos!=null)
