@@ -34,7 +34,8 @@ public abstract class LineFilterOutputStream extends FilterOutputStream {
    private boolean wasCR;
    private static final byte CR = 13;
    private static final byte LF = 10;
-   private static final int MAX_STREAM_SIZE = 8192;
+   // Lines longer than this will be split
+   private static final int MAX_LINE_SIZE = 8192;
    
    private ByteArrayOutputStream bos = new ByteArrayOutputStream(256);
 
@@ -62,11 +63,16 @@ public abstract class LineFilterOutputStream extends FilterOutputStream {
       
       wasCR = (b == CR);
 
-      if ((b == CR) || (b == LF) || (bos.size() > MAX_STREAM_SIZE)) {
+      if ((b == CR) || (b == LF)) { // Submit line
          String line = bos.toString();
          writeLine(line);
          bos.reset();
-      } else {
+      } else if ((bos.size() >= MAX_LINE_SIZE)) { // Submit line and write byte
+         String line = bos.toString();
+         writeLine(line);
+         bos.reset();
+         bos.write(b);
+      } else { // Write bite
          bos.write(b);
       }
       
