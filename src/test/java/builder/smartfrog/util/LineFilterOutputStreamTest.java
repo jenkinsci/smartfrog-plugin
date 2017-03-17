@@ -26,6 +26,7 @@ package builder.smartfrog.util;
 import com.google.common.base.Joiner;
 import com.google.common.io.NullOutputStream;
 import hudson.util.IOUtils;
+import org.apache.tools.ant.filters.StringInputStream;
 import org.hamcrest.Matchers;
 import org.junit.Test;
 
@@ -37,8 +38,6 @@ import java.util.List;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.iterableWithSize;
-import static org.junit.Assert.assertEquals;
 
 /**
  * @author ogondza.
@@ -54,6 +53,17 @@ public class LineFilterOutputStreamTest {
 
         protected void writeLine(String line) {
             record.add(line);
+        }
+    }
+
+    private static final class Noop extends LineFilterOutputStream {
+        private int count = 0;
+        public Noop() {
+            super(new NullOutputStream());
+        }
+
+        protected void writeLine(String line) {
+            count += line.length();
         }
     }
 
@@ -110,5 +120,15 @@ public class LineFilterOutputStreamTest {
         assertThat(actual, contains(expected.toArray(new String[] {})));
         Joiner joiner = Joiner.on("");
         assertThat(joiner.join(actual), equalTo(joiner.join(expected)));
+    }
+
+    @Test
+    public void perf() throws Exception {
+        String source = IOUtils.toString(getClass().getResourceAsStream("fake.log"), "UTF-8");
+        Noop noop = new Noop();
+        for (int i = 0; i < 1000; i++) {
+            IOUtils.copy(new StringInputStream(source), new PrintStream(noop));
+        }
+        System.out.println(noop.count);
     }
 }
